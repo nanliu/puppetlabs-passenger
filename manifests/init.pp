@@ -1,38 +1,55 @@
 # Class: passenger
 #
-# This class installs passenger
+# Installs phusion passenger
 #
 # Parameters:
+#   version: passenger version (present, latest, version).
+#   provider: passenger packcage provider (default: gem).
+#   bin_path: passenger binary path.
+#   so_file: passenger.so file created by compilation process.
 #
 # Actions:
-#   - Install passenger gem
+#   - Install phusion passenger
 #   - Compile passenger module
 #
 # Requires:
+#   - apache::dev
 #   - ruby::dev
 #   - gcc
-#   - apache::dev
 #
 # Sample Usage:
+#   class { 'passenger':
+#     version  => '2.2.11',
+#     provider => 'gem',
+#     bin_path => [ '/System/Library/Frameworks/Ruby.framework/Versions/Current/usr/bin', '/usr/bin', '/bin' ],
+#     so_file  => "/System/Library/Frameworks/Ruby.framework/Versions/Current/usr/bin/passenger-$version/ext/apache2/mod_passenger.so",
+#   }
 #
-class passenger {
-  include passenger::params
-  require ruby::dev
-  require gcc
-  require apache::dev
-  $version=$passenger::params::version
+class passenger (
+  $version  = hiera('passenger_version'),
+  $provider = hiera('passenger_provider'),
+  $bin_path = hiera_array('passenger_bin_path'),
+  $so_file  = hiera('passenger_so_path')
+) {
 
-  package {'passenger':
-    name   => 'passenger',
-    ensure => $version,
-    provider => 'gem',
+  include apache::dev
+  include ruby::dev
+  include gcc
+
+  Class['gcc']       -> Class['passenger']
+  Class['ruby::dev'] -> Class['passenger']
+
+  package { 'passenger':
+    ensure   => $version,
+    provider => $provider,
   }
 
-  exec {'compile-passenger':
-    path => [ $passenger::params::gem_binary_path, '/usr/bin', '/bin'],
-    command => 'passenger-install-apache2-module -a',
+  exec { 'compile-passenger':
+    command   => 'passenger-install-apache2-module -a',
+    path      => $bin_path,
     logoutput => true,
-    creates => $passenger::params::mod_passenger_location,
-    require => Package['passenger'],
+    creates   => $so_file,
+    require   => Package['passenger'],
   }
+
 }
