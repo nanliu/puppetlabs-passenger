@@ -29,7 +29,7 @@ class passenger (
   $version  = hiera('passenger_version'),
   $provider = hiera('passenger_provider'),
   $bin_path = hiera_array('passenger_bin_path'),
-  $so_file  = hiera('passenger_so_path')
+  $so_file  = hiera('passenger_so_file')
 ) {
 
   include apache::dev
