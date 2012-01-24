@@ -28,9 +28,11 @@
 class passenger (
   $version  = hiera('passenger_version'),
   $provider = hiera('passenger_provider'),
-  $bin_path = hiera_array('passenger_bin_path'),
+  $bin_path = hiera('passenger_bin_path'),
   $so_file  = hiera('passenger_so_file')
 ) {
+
+  $path = [$bin_path, '/usr/sbin', '/sbin']
 
   include apache::dev
   include ruby::dev
@@ -46,7 +48,7 @@ class passenger (
 
   exec { 'compile-passenger':
     command   => 'passenger-install-apache2-module -a',
-    path      => $bin_path,
+    path      => $path,
     logoutput => true,
     creates   => $so_file,
     require   => Package['passenger'],
